@@ -1,10 +1,9 @@
 package br.com.fiap.satelite.service;
 
+import br.com.fiap.satelite.domain.dto.ClimaExternoDto;
 import br.com.fiap.satelite.client.ClimaExternoClient;
 import br.com.fiap.satelite.domain.AlertaClimatico;
-import br.com.fiap.satelite.domain.ClimaExternoDto;
 import br.com.fiap.satelite.domain.StatusAlerta;
-import br.com.fiap.satelite.domain.ClimaExternoDto;
 import br.com.fiap.satelite.repository.AlertaClimaticoRepository;
 import br.com.fiap.satelite.service.ai.SateliteAiAnalyst;
 import org.springframework.cache.annotation.CacheEvict;

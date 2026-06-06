@@ -1,6 +1,6 @@
 package br.com.fiap.satelite.client;
 
-import br.com.fiap.satelite.dto.ClimaExternoDto;
+import br.com.fiap.satelite.domain.dto.ClimaExternoDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
