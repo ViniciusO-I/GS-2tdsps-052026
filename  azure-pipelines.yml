@@ -1,0 +1,84 @@
+# ============================================================
+#  SpaceWeather Guard — Build Pipeline (CI)
+#  Disciplina: DevOps Tools & Cloud Computing — FIAP 2026/1
+#  Aluno: Vinicius Oliveira — RM559611 | Turma: 2TDSPS
+# ============================================================
+
+trigger:
+  branches:
+    include:
+      - main
+      - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+  MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
+stages:
+
+  # ─────────────────────────────────────────────
+  #  STAGE 1 — Build & Test
+  # ─────────────────────────────────────────────
+  - stage: BuildAndTest
+    displayName: 'Build & Test'
+    jobs:
+      - job: MavenBuild
+        displayName: 'Maven Build, Test & Package'
+        steps:
+
+          # Cache do repositório Maven para acelerar builds
+          - task: Cache@2
+            displayName: 'Cache Maven local repository'
+            inputs:
+              key: 'maven | "$(Agent.OS)" | **/pom.xml'
+              restoreKeys: |
+                maven | "$(Agent.OS)"
+                maven
+              path: $(MAVEN_CACHE_FOLDER)
+
+          # Java 21
+          - task: JavaToolInstaller@0
+            displayName: 'Use Java 21'
+            inputs:
+              versionSpec: '21'
+              jdkArchitectureOption: 'x64'
+              jdkSourceOption: 'PreInstalled'
+
+          # Roda testes unitários + empacota o JAR
+          # -DskipTests=false garante que os testes rodem
+          # Os testes usam H2 em memória — não precisam de Oracle nem Kafka
+          - task: Maven@4
+            displayName: 'mvn package (build + tests)'
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'package'
+              options: >
+                -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)
+                -DORACLE_USER=test
+                -DORACLE_PASSWORD=test
+                -DKAFKA_SERVERS=localhost:9092
+                -Dspring.datasource.url=jdbc:h2:mem:testdb
+                -Dspring.datasource.driver-class-name=org.h2.Driver
+                -Dspring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.21'
+
+          # Publica o JAR como artefato do pipeline
+          - task: CopyFiles@2
+            displayName: 'Copiar JAR para staging'
+            inputs:
+              sourceFolder: '$(System.DefaultWorkingDirectory)/target'
+              contents: '*.jar'
+              targetFolder: '$(Build.ArtifactStagingDirectory)'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publicar artefato: drop'
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)'
+              artifactName: 'drop'
+              publishLocation: 'Container'

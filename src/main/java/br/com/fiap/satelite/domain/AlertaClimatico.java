@@ -2,7 +2,6 @@ package br.com.fiap.satelite.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.hateoas.RepresentationModel;
 import java.time.LocalDateTime;
 
@@ -13,7 +12,6 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EnableFeignClients
 public class AlertaClimatico extends RepresentationModel<AlertaClimatico> {
 
     @Id
