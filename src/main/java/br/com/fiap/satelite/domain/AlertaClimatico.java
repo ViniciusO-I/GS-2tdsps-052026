@@ -3,6 +3,7 @@ package br.com.fiap.satelite.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.hateoas.RepresentationModel;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,8 +27,12 @@ public class AlertaClimatico extends RepresentationModel<AlertaClimatico> {
     private LocalDateTime dataHoraRegistro;
 
     @Enumerated(EnumType.STRING)
-    private StatusAlerta status; // SUSPEITO, CONFIRMADO, FALSO_POSITIVO
+    private StatusAlerta status;
 
     @Column(length = 2000)
-    private String parecerIa; // Relatório gerado pelo Spring AI via RAG
+    private String parecerIa;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "satelite_fk")
+    private Satelite satelite;
 }
