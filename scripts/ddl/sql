@@ -1,0 +1,78 @@
+-- ============================================================
+--  SpaceWeather Guard — Scripts DDL
+--  Disciplina: DevOps Tools & Cloud Computing — FIAP 2026/1
+--  Aluno: Vinicius Oliveira — RM559611 | Turma: 2TDSPS
+--  Banco: Oracle FIAP (oracle.fiap.com.br:1521:orcl)
+--
+--  Obs: As tabelas são criadas automaticamente pelo Hibernate
+--  (ddl-auto=update). Este script serve para documentação
+--  e referência estrutural.
+-- ============================================================
+
+-- ── SEQUENCE: tb_satelites ────────────────────────────────
+CREATE SEQUENCE seq_satelites
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- ── TABELA 1: tb_satelites ────────────────────────────────
+-- Armazena os satélites monitorados pelo sistema
+CREATE TABLE tb_satelites (
+    id               NUMBER          DEFAULT seq_satelites.NEXTVAL PRIMARY KEY,
+    codigo_satelite  VARCHAR2(20)    NOT NULL UNIQUE,   -- ex: SAT-BR-01
+    nome             VARCHAR2(100)   NOT NULL,
+    operador         VARCHAR2(100),
+    altitude_km      NUMBER(10,2),
+    tipo_orbita      VARCHAR2(10),                      -- LEO, GEO, MEO
+    data_lancamento  TIMESTAMP,
+    ativo            NUMBER(1)       DEFAULT 1 NOT NULL -- 1=ativo, 0=inativo
+);
+
+COMMENT ON TABLE  tb_satelites IS 'Catálogo de satélites monitorados pelo SpaceWeather Guard';
+COMMENT ON COLUMN tb_satelites.codigo_satelite IS 'Código único do satélite (ex: SAT-BR-01)';
+COMMENT ON COLUMN tb_satelites.tipo_orbita     IS 'LEO=Baixa, GEO=Geoestacionária, MEO=Média';
+
+-- ── SEQUENCE: tb_alertas_climaticos ──────────────────────
+CREATE SEQUENCE seq_alertas
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- ── TABELA 2: tb_alertas_climaticos ──────────────────────
+-- Armazena os alertas climáticos gerados a partir de leituras de satélite
+CREATE TABLE tb_alertas_climaticos (
+    id                   NUMBER           DEFAULT seq_alertas.NEXTVAL PRIMARY KEY,
+    satelite_fk          NUMBER           REFERENCES tb_satelites(id),   -- FK → tb_satelites
+    satelite_id          VARCHAR2(20),                                    -- código textual
+    latitude             NUMBER(10,6),
+    longitude            NUMBER(10,6),
+    temperatura_solo     NUMBER(5,2),
+    umidade_ar           NUMBER(5,2),
+    status               VARCHAR2(20)     NOT NULL,  -- SUSPEITO | CONFIRMADO | FALSO_POSITIVO
+    parecer_ia           CLOB,
+    data_hora_registro   TIMESTAMP        DEFAULT SYSTIMESTAMP NOT NULL
+);
+
+COMMENT ON TABLE  tb_alertas_climaticos IS 'Alertas climáticos detectados por satélite';
+COMMENT ON COLUMN tb_alertas_climaticos.satelite_fk       IS 'FK para tb_satelites (relacionamento)';
+COMMENT ON COLUMN tb_alertas_climaticos.status            IS 'SUSPEITO | CONFIRMADO | FALSO_POSITIVO';
+COMMENT ON COLUMN tb_alertas_climaticos.parecer_ia        IS 'Parecer gerado pelo motor de análise';
+
+-- ── ÍNDICES ───────────────────────────────────────────────
+CREATE INDEX idx_alertas_status     ON tb_alertas_climaticos(status);
+CREATE INDEX idx_alertas_satelite   ON tb_alertas_climaticos(satelite_fk);
+CREATE INDEX idx_alertas_data       ON tb_alertas_climaticos(data_hora_registro);
+
+-- ── DADOS INICIAIS (opcional) ─────────────────────────────
+INSERT INTO tb_satelites (codigo_satelite, nome, operador, altitude_km, tipo_orbita, ativo)
+VALUES ('SAT-BR-01', 'CBERS-4A', 'INPE/CAST', 628, 'LEO', 1);
+
+INSERT INTO tb_satelites (codigo_satelite, nome, operador, altitude_km, tipo_orbita, ativo)
+VALUES ('SAT-BR-02', 'Amazonia-1', 'INPE', 752, 'LEO', 1);
+
+INSERT INTO tb_satelites (codigo_satelite, nome, operador, altitude_km, tipo_orbita, ativo)
+VALUES ('SAT-BR-03', 'SGB-1', 'FAB', 35786, 'GEO', 1);
+
+COMMIT;
