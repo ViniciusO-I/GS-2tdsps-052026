@@ -32,8 +32,8 @@ GitHub (push) → Azure Pipelines (CI: build + test + JAR) → Azure App Service
 2. Clique no ícone **Cloud Shell** (ícone `>_` no topo)
 3. Selecione **Bash**
 4. Faça upload do arquivo `infra-azure.sh`:
-    - Clique no ícone de upload no Cloud Shell
-    - Selecione o arquivo
+   - Clique no ícone de upload no Cloud Shell
+   - Selecione o arquivo
 5. Execute:
    ```bash
    chmod +x infra-azure.sh
@@ -58,7 +58,7 @@ https://app-spaceweather-rm559611.azurewebsites.net
 
 1. Acesse [dev.azure.com](https://dev.azure.com)
 2. Clique em **New organization** (ou use uma existente)
-3. Crie um **Project**: `SpaceWeatherGuard`
+3. Crie um **Project**: `GS-rm559611`
 
 ---
 
@@ -81,10 +81,15 @@ https://app-spaceweather-rm559611.azurewebsites.net
 6. Em **Path**, escolha `/azure-pipelines.yml`
 7. Clique em **Continue** e depois **Run**
 
+> **⚠️ Importante — Agent Specification:**  
+> Se o pipeline falhar com erro `release version 21 not supported` ou agente descontinuado,
+> edite o pipeline → clique no job **Build** → no campo **Agent Specification** troque para **`ubuntu-latest`**.
+> Salve e execute novamente.
+
 O pipeline irá:
 - Fazer cache do repositório Maven
 - Compilar o projeto com Java 21
-- Rodar os 5 testes unitários (sem Oracle, sem Kafka — usa H2 em memória)
+- Rodar os **4 testes unitários** (sem Oracle, sem Kafka — usa H2 em memória)
 - Publicar o JAR como artefato `drop`
 
 ---
@@ -99,13 +104,19 @@ O pipeline irá:
 ### Artifact (fonte)
 - Clique em **Add an artifact**
 - Source type: **Build**
-- Project: `SpaceWeatherGuard`
+- Project: `GS-rm559611`
 - Source (build pipeline): selecione o pipeline criado no Passo 4
 - Default version: **Latest**
 - Source alias: `drop`
 - Clique no ícone de raio ⚡ e ative **Continuous deployment trigger**
 
-### Stage — Deploy to Azure App Service
+### Stage — Deploy Azure
+
+> **⚠️ Importante — Agent Specification:**  
+> Clique no job **Run on agent** dentro do stage → troque **Agent pool** para `Azure Pipelines`
+> e **Agent Specification** para **`ubuntu-latest`**. O agente padrão `Hosted Windows 2019 with VS2019`
+> está descontinuado e causa erro.
+
 - Clique em **1 job, 1 task** no stage
 - Selecione a task **Deploy Azure App Service**
 - Preencha:
@@ -113,11 +124,9 @@ O pipeline irá:
 | Campo | Valor |
 |---|---|
 | Azure subscription | Selecione sua assinatura (autorize se necessário) |
-| App type | Web App on Linux |
+| App type | `Web App on Linux` |
 | App Service name | `app-spaceweather-rm559611` |
 | Package or folder | `$(System.DefaultWorkingDirectory)/**/*.jar` |
-| Runtime Stack | Java 21 |
-| Startup command | `java -jar /home/site/wwwroot/*.jar` |
 
 5. Clique em **Save** e depois em **Create release**
 
@@ -149,17 +158,19 @@ No portal Azure:
         ↓
 2. Azure Pipelines detecta o push (trigger CI)
         ↓
-3. Build Pipeline roda:
+3. Build Pipeline roda (ubuntu-latest):
+   - Cache Maven
+   - Java 21
    - mvn package
-   - 5 testes unitários
+   - 4 testes unitários (H2 em memória)
    - Publica JAR como artefato "drop"
         ↓
 4. Release Pipeline dispara automaticamente (CD trigger)
         ↓
-5. JAR é deployado no Azure App Service
+5. JAR é deployado no Azure App Service (ubuntu-latest)
         ↓
 6. App disponível em:
-   https://app-spaceweather-rm559611.azurewebsites.net/swagger-ui.html
+   https://app-spaceweather-rm559611.azurewebsites.net
 ```
 
 ---

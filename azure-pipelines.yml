@@ -39,7 +39,7 @@ stages:
                 maven
               path: $(MAVEN_CACHE_FOLDER)
 
-          # Java 21
+          # Usa Java 21 (disponível por padrão no ubuntu-latest)
           - task: JavaToolInstaller@0
             displayName: 'Use Java 21'
             inputs:
@@ -47,8 +47,7 @@ stages:
               jdkArchitectureOption: 'x64'
               jdkSourceOption: 'PreInstalled'
 
-          # Roda testes unitários + empacota o JAR
-          # -DskipTests=false garante que os testes rodem
+          # Compila, roda os 4 testes unitários e empacota o JAR
           # Os testes usam H2 em memória — não precisam de Oracle nem Kafka
           - task: Maven@4
             displayName: 'mvn package (build + tests)'
@@ -68,7 +67,7 @@ stages:
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.21'
 
-          # Publica o JAR como artefato do pipeline
+          # Copia o JAR para o diretório de staging
           - task: CopyFiles@2
             displayName: 'Copiar JAR para staging'
             inputs:
@@ -76,6 +75,7 @@ stages:
               contents: '*.jar'
               targetFolder: '$(Build.ArtifactStagingDirectory)'
 
+          # Publica o JAR como artefato "drop" para o Release Pipeline
           - task: PublishBuildArtifacts@1
             displayName: 'Publicar artefato: drop'
             inputs:
